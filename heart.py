@@ -942,9 +942,10 @@ plt.show()
 
 
 # In[85]:
+heart,minmax_scaler = scale_data(heart)
+heart,label_encoder = encode_data(heart)
 
-
-for col, MinMaxScaler in .items():
+for col, scaler in minmax_scaler.items():
     # Use inverse_transform to get the original values
     heart[col] = scaler.inverse_transform(heart[[col]])
 
@@ -1025,32 +1026,3 @@ pickle.dump(pipeline,open('pipe.pkl','wb'))
 
 
 heart.head(5)
-
-
-# In[ ]:
-
-
-
-
-
-# TURNING INTO ML PIPELINES WITH ZENML 
-
-# In[93]:
-
-
-from zenml import step 
-from typing_extensions import Annotated 
-from typing import Tuple
-
-
-# In[94]:
-
-
-step1 
-
-
-# In[ ]:
-
-
-X_train.columns
-
