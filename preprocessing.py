@@ -16,7 +16,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import confusion_matrix, classification_report,accuracy_score,mean_absolute_error,precision_score,r2_score,mean_squared_error
 from sklearn.pipeline import Pipeline 
-from heart import impute_categorical_data,impute_continuous_data, scale_data, encode_data
+#from heart import impute_categorical_data,impute_continuous_data, scale_data, encode_data
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import mean_squared_error,r2_score
 
