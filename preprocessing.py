@@ -17,6 +17,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import confusion_matrix, classification_report,accuracy_score,mean_absolute_error,precision_score,r2_score,mean_squared_error
 from sklearn.pipeline import Pipeline 
 from heart import impute_categorical_data,impute_continuous_data, scale_data, encode_data
+from imblearn.over_sampling import SMOTE
 
 def load_data(file_path):
     data = pd.read_csv(file_path)
@@ -167,3 +168,27 @@ def encode_data(data):
         data[col] = encode.fit_transform(data[[col]])
         label_encoder[col] = encode
     return data, label_encoder
+
+def train_model(data):
+    # Split the data into features and target variable
+    X = data.drop(columns=['num'])
+    y = data['num']
+
+    # Split the data into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Perform SMOTE oversampling
+    smote = SMOTE(random_state=42)
+    X_balanced, y_balanced = smote.fit_resample(X_train, y_train)
+
+    # Train the model (RandomForestClassifier as an example)
+    model = RandomForestClassifier(random_state=42)
+    model.fit(X_balanced, y_balanced)
+
+    # Evaluate the model
+    y_pred = model.predict(X_test)
+    confusion_mat = confusion_matrix(y_test, y_pred)
+    print("Confusion Matrix:\n", confusion_mat)
+
+    # Return the trained model (you can save it if needed)
+    return model
