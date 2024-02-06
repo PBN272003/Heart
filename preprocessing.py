@@ -149,3 +149,13 @@ def impute_continuous_data(data, numeric_cols, bool_cols,missing_data_cols):
     df_combined = pd.concat([heart_not_null, heart_null])
     
     return df_combined[numeric_cols]
+
+def scale_data(data):
+    columns_to_scale = ['oldpeak', 'thalch', 'chol', 'trestbps', 'age']
+    minmax_scaler={}
+    for col in columns_to_scale:
+        minmax = MinMaxScaler()
+        data[col] = minmax.fit_transform(data[[col]])
+        minmax_scaler[col] = minmax
+    return data, minmax_scaler
+
