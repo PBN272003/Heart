@@ -29,7 +29,7 @@ def preprocess_data(data):
     numeric_cols = ['oldpeak','thalch','chol','trestbps','age']
     missing_data_cols = data.isnull().sum()[data.isnull().sum() > 0].index.tolist()
     data = impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols)
-    data = impute_continuous_data(data)
+    data = impute_continuous_data(data, numeric_cols, bool_cols,missing_data_cols)
     data = scale_data(data)
     data = encode_data(data)
     return data
@@ -91,3 +91,61 @@ def impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols)
     
     heart_combined = pd.concat([heart_not_null, heart_null])
     return heart_combined[categorical_cols]
+
+def impute_continuous_data(data, numeric_cols, bool_cols,missing_data_cols):
+    heart_null = data[data[numeric_cols].isnull()]
+    heart_not_null = data[data[numeric_cols].notnull()]
+    X = heart_not_null.drop(numeric_cols,axis=1)
+    y = heart_not_null[numeric_cols]
+    other_missing_cols = [col for col in missing_data_cols if col != numeric_cols]
+    
+    label_encoder = LabelEncoder()
+    for col in X.columns:
+        if X[col].dtype == 'object' or X[col].dtype == 'category':
+            X[col] = label_encoder.fit_transform(X[col])
+            
+    iterative_imputer = IterativeImputer(estimator=RandomForestRegressor(random_state=42), add_indicator=True)
+    for col in other_missing_cols:
+        if X[col].isnull().sum() > 0:
+            col_with_missing_values = X[col].values.reshape(-1, 1)
+            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            X[col] = imputed_values[:, 0]
+        else:
+            pass
+    
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Train a RandomForestRegressor on the non-missing data
+    random_forest = RandomForestRegressor()
+    random_forest.fit(X_train, y_train)
+
+    # Predict the target variable for the missing data
+    y_pred = random_forest.predict(X_test)
+
+    # Print regression performance metrics
+    print("MAE =", mean_absolute_error(y_test, y_pred), "\n")
+    print("RMSE =", mean_squared_error(y_test, y_pred, squared=False), "\n")
+    print("R2 =", r2_score(y_test, y_pred), "\n")
+
+    # Prepare the missing data for imputation
+    X = heart_null.drop(numeric_cols, axis=1)
+    for col in X.columns:
+        if X[col].dtype == 'object' or X[col].dtype == 'category':
+            X[col] = label_encoder.fit_transform(X[col])
+            
+    for col in other_missing_cols:
+        if X[col].isnull().sum() > 0:
+            col_with_missing_values = X[col].values.reshape(-1, 1)
+            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            X[col] = imputed_values[:, 0]
+        else:
+            pass
+                
+    if len(heart_null) > 0: 
+        heart_null[numeric_cols] = random_forest.predict(X)
+    else:
+        pass
+
+    df_combined = pd.concat([heart_not_null, heart_null])
+    
+    return df_combined[numeric_cols]
