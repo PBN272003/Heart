@@ -159,3 +159,11 @@ def scale_data(data):
         minmax_scaler[col] = minmax
     return data, minmax_scaler
 
+def encode_data(data):
+    encoded_columns = ['sex','dataset','cp','fbs','restecg','exang','slope','ca','thal']
+    label_encoder = {}
+    for col in encoded_columns:
+        encode = LabelEncoder()
+        data[col] = encode.fit_transform(data[[col]])
+        label_encoder[col] = encode
+    return data, label_encoder
