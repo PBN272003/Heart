@@ -24,11 +24,70 @@ def load_data(file_path):
 
 def preprocess_data(data):
     # Perform your preprocessing here
-    data = impute_categorical_data(data)
+    categorical_cols = ['thal', 'ca', 'slope', 'exang', 'restecg','fbs', 'cp', 'sex', 'num']
+    bool_cols = ['fbs','exang']
+    numeric_cols = ['oldpeak','thalch','chol','trestbps','age']
+    missing_data_cols = data.isnull().sum()[data.isnull().sum() > 0].index.tolist()
+    data = impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols)
     data = impute_continuous_data(data)
     data = scale_data(data)
     data = encode_data(data)
     return data
 
-def impute_categorical_data(data):
+def impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols):
+    heart_null = data[data[categorical_cols].isnull()]
+    heart_not_null = data[data[categorical_cols].notnull()]
+    X = heart_not_null.drop(categorical_cols,axis=1)
+    y = heart_not_null[categorical_cols]
     
+    other_missing_cols =  [col for col in missing_data_cols if col != categorical_cols]
+    
+    label_encoder = LabelEncoder()
+    
+    for col in X.columns:
+        if X[col].dtype == 'object' or X[col].dtype == 'category':
+            X[col] = label_encoder.fit_transform(X[col])
+            
+    if categorical_cols in bool_cols:
+        y = label_encoder.fit_transform(y)
+        
+    iterative_imputer = IterativeImputer(estimator=RandomForestRegressor(random_state=42), add_indicator=True)
+    
+    for col in other_missing_cols:
+        if X[col].isnull().sum()>0:
+            col_with_missing_values = X[col].values.reshape(-1, 1)
+            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            X[col] = imputed_values[:, 0]
+        else:
+            pass
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    random_forest = RandomForestClassifier()
+    random_forest.fit(X_train,y_train)
+    y_pred = random_forest.predict(X_test)
+    accuracy = accuracy_score(y_test,y_pred)
+    print("The feature '"+ categorical_cols+ "' has been imputed with", round((accuracy * 100), 2), "accuracy\n")
+    
+    X = heart_null.drop(categorical_cols, axis=1)
+    for col in X.columns:
+        if X[col].dtype == 'object' or X[col].dtype == 'category':
+            X[col] = label_encoder.fit_transform(X[col])
+    for col in other_missing_cols:
+        if X[col].isnull().sum() > 0:
+            col_with_missing_values = X[col].values.reshape(-1, 1)
+            imputed_values = iterative_imputer.fit_transform(col_with_missing_values)
+            X[col] = imputed_values[:, 0]
+        else:
+            pass
+        
+    if len(heart_null) > 0:
+        heart_null[categorical_cols] = random_forest.predict(X)
+        # Map predicted boolean values back to True/False if the target variable is boolean
+        if categorical_cols in bool_cols:
+            heart_null[categorical_cols] = heart_null[categorical_cols].map({0: False, 1: True})
+        else:
+            pass
+    else:
+        pass
+    
+    heart_combined = pd.concat([heart_not_null, heart_null])
+    return heart_combined[categorical_cols]
