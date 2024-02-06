@@ -18,6 +18,7 @@ from sklearn.metrics import confusion_matrix, classification_report,accuracy_sco
 from sklearn.pipeline import Pipeline 
 from heart import impute_categorical_data,impute_continuous_data, scale_data, encode_data
 from imblearn.over_sampling import SMOTE
+from sklearn.metrics import mean_squared_error,r2_score
 
 def load_data(file_path):
     data = pd.read_csv(file_path)
@@ -33,7 +34,10 @@ def preprocess_data(data):
     data = impute_continuous_data(data, numeric_cols, bool_cols,missing_data_cols)
     data = scale_data(data)
     data = encode_data(data)
-    return data
+    model, y_test, y_pred = train_model(data)
+    mse, r2, rmse = evaluate_model(y_test, y_pred)
+    return data, model, mse, r2, rmse
+
 
 def impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols):
     heart_null = data[data[categorical_cols].isnull()]
@@ -191,4 +195,11 @@ def train_model(data):
     print("Confusion Matrix:\n", confusion_mat)
 
     # Return the trained model (you can save it if needed)
-    return model
+    return model,y_test,y_pred
+
+def evaluate_model(y_test, y_pred):
+    mse = mean_squared_error(y_test,y_pred)
+    r2 = r2_score(y_test,y_pred)
+    rmse = mean_squared_error(y_test,y_pred,squared=False)
+    return mse,r2,rmse
+    
