@@ -20,9 +20,12 @@ from sklearn.pipeline import Pipeline
 from imblearn.over_sampling import SMOTE
 from sklearn.metrics import mean_squared_error,r2_score
 
+
+
 def load_data(file_path):
     data = pd.read_csv(file_path)
     return data 
+
 
 def preprocess_data(data):
     # Perform your preprocessing here
@@ -34,9 +37,11 @@ def preprocess_data(data):
     data = impute_continuous_data(data, numeric_cols, bool_cols,missing_data_cols)
     data = scale_data(data)
     data = encode_data(data)
-    model, y_test, y_pred = train_model(data)
-    mse, r2, rmse = evaluate_model(y_test, y_pred)
-    return data, model, mse, r2, rmse
+    # model, y_test, y_pred = train_model(data)
+    # mse, r2, rmse = evaluate_model(y_test, y_pred)
+    # # print("priyank")
+    # return data, model, mse, r2, rmse
+    return data
 
 
 def impute_categorical_data(data, categorical_cols, bool_cols,missing_data_cols):
@@ -195,6 +200,7 @@ def train_model(data):
     print("Confusion Matrix:\n", confusion_mat)
 
     # Return the trained model (you can save it if needed)
+    print(y_test,y_pred)
     return model,y_test,y_pred
 
 def evaluate_model(y_test, y_pred):
